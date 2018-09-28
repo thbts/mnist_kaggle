@@ -41,7 +41,7 @@ def load_data(split=True):
     return X_train, Y_train, test
 
 if __name__ == '__main__':
-    size_ensemble = 5
+    size_ensemble = 10
     models = []
     results = None
     X_train, X_val, Y_train, Y_val, test = load_data()

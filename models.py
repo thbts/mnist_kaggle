@@ -144,7 +144,7 @@ class DenseNet_mnist:
         cnn2_5 = dense_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
         ##Third dense block
-        cnn3_5 = dense_block(64, inp3_1)
+        cnn3_5 = dense_block(128, inp3_1)
         vector = Flatten()(cnn3_5)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)

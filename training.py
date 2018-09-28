@@ -42,3 +42,4 @@ def train(name_file, data):
     model_expert17.train(X_train, Y_train)
     model_expert17.test()
     """
+    return results
