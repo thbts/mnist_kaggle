@@ -1,5 +1,4 @@
 #TODO
-<<<<<<< HEAD
 import training
 import pandas as pd
 from keras.utils.np_utils import to_categorical
