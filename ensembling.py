@@ -1,4 +1,5 @@
 #TODO
+<<<<<<< HEAD
 import training
 import pandas as pd
 from keras.utils.np_utils import to_categorical
@@ -58,4 +59,4 @@ if __name__ == '__main__':
     results = pd.Series(results,name="Label")
     submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
     submission.to_csv('densenets_ensemble.csv',index=False)
-    
+
