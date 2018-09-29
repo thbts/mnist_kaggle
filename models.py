@@ -144,7 +144,7 @@ class DenseNet_mnist:
         cnn2_5 = dense_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
         ##Third dense block
-        cnn3_5 = dense_block(64, inp3_1)
+        cnn3_5 = dense_block(128, inp3_1)
         vector = Flatten()(cnn3_5)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)
@@ -173,19 +173,20 @@ class DenseNet_mnist:
         batch_size = 128
         self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
 
-    def test(self, test, submission=False):
+    def test(self, test, name_file, submission=False):
         """Test the model, save it and produce the submission file if needed. If
         not, return the results for ensembling purposes."""
         # predict results
         results = self.model.predict(test)
-        self.model.save('densenet.h5')
+        self.model.save(name_file+'.h5')
         if submission!=True:
             return results
         # select the indix with the maximum probability
         results = np.argmax(results,axis = 1)
         results = pd.Series(results,name="Label")
         submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
-        submission.to_csv("cnn_mnist_densenet.csv",index=False)
+        submission.to_csv(name_file+'.csv',index=False)
+        return results
 
 
 class Expert_Net17_mnist:
