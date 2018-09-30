@@ -153,7 +153,8 @@ class DenseNet_mnist:
         model = Model(inputs=inputs, outputs=predictions)
         return model
 
-    def train(self, X_train, X_val, Y_train, Y_val):
+    # def train(self, X_train, X_val, Y_train, Y_val):
+    def train(self, X_train, Y_train):
         """Train the network for mnist.
         ----------
         X_train: array
@@ -169,9 +170,25 @@ class DenseNet_mnist:
         ---------
         """
         self.model.compile(optimizer='Nadam', loss='categorical_crossentropy', metrics=['accuracy'])
-        epochs = 5
+        epochs = 10
         batch_size = 128
-        self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
+
+        datagen = ImageDataGenerator(
+            rotation_range=20,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            zoom_range=[0.9, 1.1],
+            rescale=1./255,
+            validation_split=0.1
+            )
+
+        datagen.fit(X_train)
+
+        # fits the model on batches with real-time data augmentation:
+        self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                                 steps_per_epoch=len(X_train) / batch_size, epochs=epochs)
+
+        # self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
 
     def test(self, test, name_file, submission=False):
         """Test the model, save it and produce the submission file if needed. If

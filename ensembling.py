@@ -2,7 +2,9 @@
 import training
 import pandas as pd
 from keras.utils.np_utils import to_categorical
+from keras.models import load_model
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 import numpy as np
 
 def load_data(split=True):
@@ -44,8 +46,13 @@ if __name__ == '__main__':
     size_ensemble = 10
     models = []
     results = None
-    X_train, X_val, Y_train, Y_val, test = load_data()
-    data = (X_train, X_val, Y_train, Y_val, test)
+    classes = (0,1,2,3,4,5,6,7,8,9)
+    # X_train, X_val, Y_train, Y_val, test = load_data(split=False)
+    X_train, Y_train, test = load_data(split=False)
+    print('data loaded')
+
+    # data = (X_train, X_val, Y_train, Y_val, test)
+    data = (X_train, Y_train, test)
     for i in range(size_ensemble):
         name_model = str('densenet_'+str(i))
         result_test = training.train(name_model, data)
@@ -53,9 +60,21 @@ if __name__ == '__main__':
             results = result_test
         else:
             results += result_test
-    
+
+    #Test the models
+    """
+    model = load_model('densenet_0.h5')
+    model.summary()
+    results = model.predict(X_val)
+    results = np.argmax(results,axis = 1)
+    Y_val = np.argmax(Y_val,axis = 1)
+    print('model loaded')
+    # Confusion
+    matrix = confusion_matrix(Y_val, results, classes)
+    matrix = matrix/matrix.sum(axis=0)[None,:]
+    print(np.around(matrix, decimals = 4))
+    """
     results = np.argmax(results,axis = 1)
     results = pd.Series(results,name="Label")
     submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
     submission.to_csv('densenets_ensemble.csv',index=False)
-
