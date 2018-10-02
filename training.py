@@ -25,8 +25,8 @@ from models import ResNet_mnist, Expert_Net17_mnist, DenseNet_mnist
 
 def train(name_file, data):
 
-    # X_train, X_val, Y_train, Y_val, test = data
-    X_train, Y_train, test = data
+    X_train, X_val, Y_train, Y_val, test = data
+    #X_train, Y_train, test = data
 
     #choose a model to train
     """
@@ -35,8 +35,8 @@ def train(name_file, data):
     model_resnet.test()
     """
     model_densenet = DenseNet_mnist()
-    # model_densenet.train(X_train, X_val, Y_train, Y_val)
-    model_densenet.train(X_train, Y_train)
+    model_densenet.train(X_train, X_val, Y_train, Y_val)
+    #model_densenet.train(X_train, Y_train)
     results = model_densenet.test(test, name_file)
     """
     X_train, Y_train = load_data(split=False)

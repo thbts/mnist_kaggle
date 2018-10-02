@@ -9,7 +9,7 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D,\
                          GlobalAveragePooling2D
 from keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ReduceLROnPlateau
+from keras.callbacks import ModelCheckpoint
 
 from keras.applications import ResNet50
 from sklearn.model_selection import train_test_split
@@ -31,16 +31,32 @@ def dense_block(filters, inputs):
                      activation ='relu')(inp_cnn_3)
     cnn_3 = Dropout(0.2)(cnn_3)
     cnn_3 = BatchNormalization()(cnn_3)
-    inp_cnn_4 = concatenate([cnn_1,cnn_2,cnn_3])
-    cnn_4 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
-                     activation ='relu')(inp_cnn_4)
-    cnn_4 = Dropout(0.2)(cnn_4)
-    cnn_4 = BatchNormalization()(cnn_4)
-    cnn_5 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
-                     activation ='relu')(cnn_4)
-    cnn_5 = Dropout(0.2)(cnn_5)
-    output = BatchNormalization()(cnn_5)
-    return output
+    
+    #inp_cnn_4 = concatenate([cnn_1,cnn_2,cnn_3])
+    #cnn_4 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     #activation ='relu')(inp_cnn_4)
+    #cnn_4 = Dropout(0.2)(cnn_4)
+    #cnn_4 = BatchNormalization()(cnn_4)
+    
+    #inp_cnn_5 = concatenate([cnn_1,cnn_2,cnn_3,cnn_4])
+    #cnn_5 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     #activation ='relu')(inp_cnn_5)
+    #cnn_5 = Dropout(0.2)(cnn_5)
+    #cnn_5 = BatchNormalization()(cnn_5)
+    
+    #inp_cnn_6 = concatenate([cnn_1,cnn_2,cnn_3,cnn_4,cnn_5])
+    #cnn_6 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     #activation ='relu')(inp_cnn_6)
+    #cnn_6 = Dropout(0.2)(cnn_6)
+    #cnn_6 = BatchNormalization()(cnn_6)		
+    
+    
+    #cnn_last = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     #activation ='relu')(cnn_6)
+    #cnn_last = Dropout(0.2)(cnn_last)
+    #output = BatchNormalization()(cnn_last)
+    #return output
+    return cnn_3
 
 class ResNet_mnist:
     """Class for ResNet50 adapted to mnist"""
@@ -143,9 +159,8 @@ class DenseNet_mnist:
         ##Second dense block
         cnn2_5 = dense_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
-        ##Third dense block
-        cnn3_5 = dense_block(128, inp3_1)
-        vector = Flatten()(cnn3_5)
+        
+        vector = Flatten()(inp3_1)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)
         vector = Dropout(0.5)(vector)
@@ -153,8 +168,8 @@ class DenseNet_mnist:
         model = Model(inputs=inputs, outputs=predictions)
         return model
 
-    # def train(self, X_train, X_val, Y_train, Y_val):
-    def train(self, X_train, Y_train):
+    def train(self, X_train, X_val, Y_train, Y_val):
+    #def train(self, X_train, Y_train):
         """Train the network for mnist.
         ----------
         X_train: array
@@ -170,7 +185,7 @@ class DenseNet_mnist:
         ---------
         """
         self.model.compile(optimizer='Nadam', loss='categorical_crossentropy', metrics=['accuracy'])
-        epochs = 10
+        epochs = 7
         batch_size = 128
 
         datagen = ImageDataGenerator(
@@ -178,17 +193,99 @@ class DenseNet_mnist:
             width_shift_range=0.2,
             height_shift_range=0.2,
             zoom_range=[0.9, 1.1],
-            rescale=1./255,
-            validation_split=0.1
             )
 
         datagen.fit(X_train)
-
+        
         # fits the model on batches with real-time data augmentation:
-        self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
-                                 steps_per_epoch=len(X_train) / batch_size, epochs=epochs)
+        for e in range(epochs):
+            self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                                 steps_per_epoch=len(X_train) / batch_size, epochs=1)
+            print(self.model.evaluate(X_val,Y_val,verbose=0))
+        
 
-        # self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
+        #self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
+
+    def test(self, test, name_file, submission=False):
+        """Test the model, save it and produce the submission file if needed. If
+        not, return the results for ensembling purposes."""
+        # predict results
+        results = self.model.predict(test)
+        self.model.save(name_file+'.h5')
+        if submission!=True:
+            return results
+        # select the indix with the maximum probability
+        results = np.argmax(results,axis = 1)
+        results = pd.Series(results,name="Label")
+        submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
+        submission.to_csv(name_file+'.csv',index=False)
+        return results
+        
+class BasicNet_mnist:
+    """Class for DenseNet adapted to mnist"""
+
+    def __init__(self, model=None):
+        if model is not None:
+            self.model = Model.load(model)
+        else:
+            self.model = self.define_model()
+
+    def define_model(self):
+        """This creates a model that includes the Input layer and three Dense layers"""
+        inputs = Input(shape=(28,28,1,))
+        # First dense block
+        cnn1_5 = dense_block(32, inputs)
+        inp2_1 = MaxPool2D(pool_size=(2,2))(cnn1_5)
+        ##Second dense block
+        cnn2_5 = dense_block(64, inp2_1)
+        inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
+        ##Third dense block
+        cnn3_5 = dense_block(64, inp3_1)
+        vector = Flatten()(cnn3_5)
+        vector = Dense(256, activation = "relu")(vector)
+        vector = BatchNormalization()(vector)
+        vector = Dropout(0.5)(vector)
+        predictions = Dense(10, activation = "softmax")(vector)
+        model = Model(inputs=inputs, outputs=predictions)
+        return model
+
+    def train(self, X_train, X_val, Y_train, Y_val):
+    #def train(self, X_train, Y_train):
+        """Train the network for mnist.
+        ----------
+        X_train: array
+            Training dataset. Size (N, 28, 28, 1), N being fixed by the split.
+        Y_train: array
+            Training target. Size (N, 10)
+        X_val: array
+            Validation dataset. Size (N, 28, 28, 1), N being fixed by the split.
+        Y_val: array
+            Validation target. Size (N, 10)
+        Returns
+        -------
+        ---------
+        """
+        self.model.compile(optimizer='Nadam', loss='categorical_crossentropy', metrics=['accuracy'])
+        epochs = 7
+        batch_size = 128
+
+        datagen = ImageDataGenerator(
+            rotation_range=20,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            zoom_range=[0.9, 1.1],
+            )
+
+        datagen.fit(X_train)
+        
+        # fits the model on batches with real-time data augmentation:
+        for e in range(epochs):
+            self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                                 steps_per_epoch=len(X_train) / batch_size, epochs=1)
+            print(self.model.evaluate(X_val,Y_val,verbose=0))
+        
+
+        #self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
 
     def test(self, test, name_file, submission=False):
         """Test the model, save it and produce the submission file if needed. If

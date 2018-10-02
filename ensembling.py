@@ -43,18 +43,18 @@ def load_data(split=True):
     return X_train, Y_train, test
 
 if __name__ == '__main__':
-    size_ensemble = 10
+    size_ensemble = 5
     models = []
     results = None
     classes = (0,1,2,3,4,5,6,7,8,9)
-    # X_train, X_val, Y_train, Y_val, test = load_data(split=False)
-    X_train, Y_train, test = load_data(split=False)
+    X_train, X_val, Y_train, Y_val, test = load_data()
+    #X_train, Y_train, test = load_data(split=False)
     print('data loaded')
 
-    # data = (X_train, X_val, Y_train, Y_val, test)
-    data = (X_train, Y_train, test)
+    data = (X_train, X_val, Y_train, Y_val, test)
+    #data = (X_train, Y_train, test)
     for i in range(size_ensemble):
-        name_model = str('densenet_'+str(i))
+        name_model = str('shallow_densenet_5x5_'+str(i))
         result_test = training.train(name_model, data)
         if results is None:
             results = result_test
@@ -77,4 +77,4 @@ if __name__ == '__main__':
     results = np.argmax(results,axis = 1)
     results = pd.Series(results,name="Label")
     submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
-    submission.to_csv('densenets_ensemble.csv',index=False)
+    submission.to_csv('shallower_densenets_ensemble.csv',index=False)
