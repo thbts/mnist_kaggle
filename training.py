@@ -20,7 +20,7 @@ from keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ReduceLROnPlateau
 
-from models import ResNet_mnist, Expert_Net17_mnist, DenseNet_mnist
+from models import ResNet_mnist, Expert_Net17_mnist, DenseNet_mnist, BasicNet_mnist
 
 
 def train(name_file, data):
@@ -34,7 +34,7 @@ def train(name_file, data):
     model_resnet.train(X_train, X_val, Y_train, Y_val)
     model_resnet.test()
     """
-    model_densenet = DenseNet_mnist()
+    model_densenet = BasicNet_mnist()
     model_densenet.train(X_train, X_val, Y_train, Y_val)
     #model_densenet.train(X_train, Y_train)
     results = model_densenet.test(test, name_file)

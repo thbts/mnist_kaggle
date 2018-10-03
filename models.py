@@ -58,6 +58,22 @@ def dense_block(filters, inputs):
     #return output
     return cnn_3
 
+def basic_block(filters, inputs):
+    """Dense block definition"""
+    cnn_1 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     activation ='relu')(inputs)
+    cnn_1 = Dropout(0.2)(cnn_1)
+    cnn_1 = BatchNormalization()(cnn_1)
+    cnn_2 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     activation ='relu')(cnn_1)
+    cnn_2 = Dropout(0.2)(cnn_2)
+    cnn_2 = BatchNormalization()(cnn_2)
+    cnn_3 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
+                     activation ='relu')(cnn_2)
+    cnn_3 = Dropout(0.2)(cnn_3)
+    cnn_3 = BatchNormalization()(cnn_3)
+    return cnn_3
+
 class ResNet_mnist:
     """Class for ResNet50 adapted to mnist"""
 
@@ -184,8 +200,8 @@ class DenseNet_mnist:
         -------
         ---------
         """
-        self.model.compile(optimizer='Nadam', loss='categorical_crossentropy', metrics=['accuracy'])
-        epochs = 7
+        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        epochs = 20
         batch_size = 128
 
         datagen = ImageDataGenerator(
@@ -199,8 +215,9 @@ class DenseNet_mnist:
         
         # fits the model on batches with real-time data augmentation:
         for e in range(epochs):
+            print('Validation : epoch '+str(e))
             self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
-                                 steps_per_epoch=len(X_train) / batch_size, epochs=1)
+                                 steps_per_epoch=len(X_train) / batch_size, epochs=1, verbose = 1)
             print(self.model.evaluate(X_val,Y_val,verbose=0))
         
 
@@ -234,14 +251,13 @@ class BasicNet_mnist:
         """This creates a model that includes the Input layer and three Dense layers"""
         inputs = Input(shape=(28,28,1,))
         # First dense block
-        cnn1_5 = dense_block(32, inputs)
+        cnn1_5 = basic_block(32, inputs)
         inp2_1 = MaxPool2D(pool_size=(2,2))(cnn1_5)
         ##Second dense block
-        cnn2_5 = dense_block(64, inp2_1)
+        cnn2_5 = basic_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
-        ##Third dense block
-        cnn3_5 = dense_block(64, inp3_1)
-        vector = Flatten()(cnn3_5)
+        
+        vector = Flatten()(inp3_1)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)
         vector = Dropout(0.5)(vector)
@@ -265,8 +281,8 @@ class BasicNet_mnist:
         -------
         ---------
         """
-        self.model.compile(optimizer='Nadam', loss='categorical_crossentropy', metrics=['accuracy'])
-        epochs = 7
+        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        epochs = 20
         batch_size = 128
 
         datagen = ImageDataGenerator(
@@ -280,8 +296,9 @@ class BasicNet_mnist:
         
         # fits the model on batches with real-time data augmentation:
         for e in range(epochs):
+            print('Validation : epoch '+str(e))
             self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
-                                 steps_per_epoch=len(X_train) / batch_size, epochs=1)
+                                 steps_per_epoch=len(X_train) / batch_size, epochs=1, verbose = 1)
             print(self.model.evaluate(X_val,Y_val,verbose=0))
         
 
@@ -301,7 +318,7 @@ class BasicNet_mnist:
         submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
         submission.to_csv(name_file+'.csv',index=False)
         return results
-
+        
 
 class Expert_Net17_mnist:
     """Class for an expert network to differentiate 1 and 7 adapted to mnist"""

@@ -54,7 +54,8 @@ if __name__ == '__main__':
     data = (X_train, X_val, Y_train, Y_val, test)
     #data = (X_train, Y_train, test)
     for i in range(size_ensemble):
-        name_model = str('shallow_densenet_5x5_'+str(i))
+        name_model = str('basic_net_rmsprop_'+str(i))
+        print(name_model)
         result_test = training.train(name_model, data)
         if results is None:
             results = result_test
@@ -77,4 +78,4 @@ if __name__ == '__main__':
     results = np.argmax(results,axis = 1)
     results = pd.Series(results,name="Label")
     submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
-    submission.to_csv('shallower_densenets_ensemble.csv',index=False)
+    submission.to_csv('basic_nets_ensemble.csv',index=False)
