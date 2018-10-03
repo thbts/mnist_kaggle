@@ -228,7 +228,7 @@ class DenseNet_mnist:
                                             factor=0.5,
                                             min_lr=0.00001)
 
-        checkpointer = ModelCheckpoint(name_file, monitor='val_acc', save_best_only=True)
+        checkpointer = ModelCheckpoint(name_file+str(.h5), monitor='val_acc', save_best_only=True)
 
         self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
                              steps_per_epoch=len(X_train) // batch_size, epochs=epochs,

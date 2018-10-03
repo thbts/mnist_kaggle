@@ -34,7 +34,7 @@ def train(name_file, data):
     model_resnet.train(X_train, X_val, Y_train, Y_val)
     model_resnet.test()
     """
-    model_densenet = BasicNet_mnist()
+    model_densenet = DenseNet_mnist()
     model_densenet.train(X_train, X_val, Y_train, Y_val, name_file)
     # model_densenet.train(X_train, Y_train, name_file)
     results = model_densenet.test(test, name_file)
