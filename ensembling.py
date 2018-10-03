@@ -64,22 +64,22 @@ if __name__ == '__main__':
     results = None
     classes = (0,1,2,3,4,5,6,7,8,9)
     X_train, X_val, Y_train, Y_val, test = load_data()
-    #X_train, Y_train, test = load_data(split=False)
+    # X_train, Y_train, test = load_data(split=False)
     print('data loaded')
-    """
+
     data = (X_train, X_val, Y_train, Y_val, test)
-    #data = (X_train, Y_train, test)
+    # data = (X_train, Y_train, test)
     for i in range(size_ensemble):
-        name_model = str('basic_net_rmsprop_'+str(i))
+        name_model = str('basic_net_rmsprop_val_split'+str(i))
         print(name_model)
         result_test = training.train(name_model, data)
         if results is None:
             results = result_test
         else:
             results += result_test
-
+    """
     #Test the models
-    
+
     model = load_model('densenet_0.h5')
     model.summary()
     results = model.predict(X_val)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     matrix = confusion_matrix(Y_val, results, classes)
     matrix = matrix/matrix.sum(axis=0)[None,:]
     print(np.around(matrix, decimals = 4))
- 
+
     results = np.argmax(results,axis = 1)
     results = pd.Series(results,name="Label")
     submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
@@ -107,7 +107,3 @@ if __name__ == '__main__':
                     'shallower_densenet_rmsprop_3.h5',
                     'shallower_densenet_rmsprop_4.h5']
     ensembling_existing_models(model_names,test)
-
-    
-    
-

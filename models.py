@@ -9,7 +9,7 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D,\
                          GlobalAveragePooling2D
 from keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 
 from keras.applications import ResNet50
 from sklearn.model_selection import train_test_split
@@ -31,26 +31,26 @@ def dense_block(filters, inputs):
                      activation ='relu')(inp_cnn_3)
     cnn_3 = Dropout(0.2)(cnn_3)
     cnn_3 = BatchNormalization()(cnn_3)
-    
+
     #inp_cnn_4 = concatenate([cnn_1,cnn_2,cnn_3])
     #cnn_4 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
                      #activation ='relu')(inp_cnn_4)
     #cnn_4 = Dropout(0.2)(cnn_4)
     #cnn_4 = BatchNormalization()(cnn_4)
-    
+
     #inp_cnn_5 = concatenate([cnn_1,cnn_2,cnn_3,cnn_4])
     #cnn_5 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
                      #activation ='relu')(inp_cnn_5)
     #cnn_5 = Dropout(0.2)(cnn_5)
     #cnn_5 = BatchNormalization()(cnn_5)
-    
+
     #inp_cnn_6 = concatenate([cnn_1,cnn_2,cnn_3,cnn_4,cnn_5])
     #cnn_6 = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
                      #activation ='relu')(inp_cnn_6)
     #cnn_6 = Dropout(0.2)(cnn_6)
-    #cnn_6 = BatchNormalization()(cnn_6)		
-    
-    
+    #cnn_6 = BatchNormalization()(cnn_6)
+
+
     #cnn_last = Conv2D(filters = filters, kernel_size = (3, 3),padding = 'Same',
                      #activation ='relu')(cnn_6)
     #cnn_last = Dropout(0.2)(cnn_last)
@@ -175,7 +175,7 @@ class DenseNet_mnist:
         ##Second dense block
         cnn2_5 = dense_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
-        
+
         vector = Flatten()(inp3_1)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)
@@ -184,8 +184,8 @@ class DenseNet_mnist:
         model = Model(inputs=inputs, outputs=predictions)
         return model
 
-    def train(self, X_train, X_val, Y_train, Y_val):
-    #def train(self, X_train, Y_train):
+    def train(self, X_train, X_val, Y_train, Y_val, name_file):
+    # def train(self, X_train, Y_train, name_file):
         """Train the network for mnist.
         ----------
         X_train: array
@@ -201,7 +201,7 @@ class DenseNet_mnist:
         ---------
         """
         self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-        epochs = 20
+        epochs = 30
         batch_size = 128
 
         datagen = ImageDataGenerator(
@@ -212,15 +212,28 @@ class DenseNet_mnist:
             )
 
         datagen.fit(X_train)
-        
+
         # fits the model on batches with real-time data augmentation:
+        """
         for e in range(epochs):
             print('Validation : epoch '+str(e))
             self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
                                  steps_per_epoch=len(X_train) / batch_size, epochs=1, verbose = 1)
             print(self.model.evaluate(X_val,Y_val,verbose=0))
-        
+        """
 
+        learning_rate_reduction = ReduceLROnPlateau(monitor='val_acc',
+                                            patience=3,
+                                            verbose=1,
+                                            factor=0.5,
+                                            min_lr=0.00001)
+
+        checkpointer = ModelCheckpoint(name_file, monitor='val_acc', save_best_only=True)
+
+        self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                             steps_per_epoch=len(X_train) // batch_size, epochs=epochs,
+                             validation_data = (X_val,Y_val), verbose = 1,
+                             callbacks=[learning_rate_reduction, checkpointer])
         #self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
 
     def test(self, test, name_file, submission=False):
@@ -237,7 +250,7 @@ class DenseNet_mnist:
         submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
         submission.to_csv(name_file+'.csv',index=False)
         return results
-        
+
 class BasicNet_mnist:
     """Class for DenseNet adapted to mnist"""
 
@@ -256,7 +269,7 @@ class BasicNet_mnist:
         ##Second dense block
         cnn2_5 = basic_block(64, inp2_1)
         inp3_1 = MaxPool2D(pool_size=(2,2))(cnn2_5)
-        
+
         vector = Flatten()(inp3_1)
         vector = Dense(256, activation = "relu")(vector)
         vector = BatchNormalization()(vector)
@@ -293,14 +306,14 @@ class BasicNet_mnist:
             )
 
         datagen.fit(X_train)
-        
+
         # fits the model on batches with real-time data augmentation:
         for e in range(epochs):
             print('Validation : epoch '+str(e))
             self.model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
                                  steps_per_epoch=len(X_train) / batch_size, epochs=1, verbose = 1)
             print(self.model.evaluate(X_val,Y_val,verbose=0))
-        
+
 
         #self.model.fit(X_train,Y_train, batch_size,epochs=epochs,validation_data=(X_val,Y_val))
 
@@ -318,7 +331,7 @@ class BasicNet_mnist:
         submission = pd.concat([pd.Series(range(1,28001),name = "ImageId"),results],axis = 1)
         submission.to_csv(name_file+'.csv',index=False)
         return results
-        
+
 
 class Expert_Net17_mnist:
     """Class for an expert network to differentiate 1 and 7 adapted to mnist"""
